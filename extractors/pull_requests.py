@@ -4,20 +4,21 @@ from .base import BaseExtractor
 from .comments import CommentsExtractor
 from .commits import CommitsExtractor
 
+
 class PullRequestsExtractor(BaseExtractor):
     nested_extractors = {CommitsExtractor, CommentsExtractor}
     nested_extractor_threads = 16
-    target_table = 'pr_raw'
+    target_table = "pr_raw"
 
     def prepare_nested_query_variables(self, data):
-        for pr in data['data']['search']['edges']:
+        for pr in data["data"]["search"]["edges"]:
             query_variables = deepcopy(self.query_variables)
-            query_variables['cursor'] = 'null'
-            query_variables['pr_number'] = pr['node']['number']
+            query_variables["cursor"] = "null"
+            query_variables["pr_number"] = pr["node"]["number"]
             yield query_variables
 
     def get_page_info(self, data):
-        return data['data']['search']['pageInfo']
+        return data["data"]["search"]["pageInfo"]
 
     @property
     def query(self):

@@ -1,15 +1,16 @@
 from .base import BaseExtractor
 
+
 class CommentsExtractor(BaseExtractor):
     nested_extractors = set()
     nested_extractor_threads = 1
-    target_table = 'comment_raw'
+    target_table = "comment_raw"
 
     def prepare_nested_query_variables(self, data):
         return []
 
     def get_page_info(self, data):
-        return data['data']['organization']['repository']['pullRequest']['comments']
+        return data["data"]["organization"]["repository"]["pullRequest"]["comments"]
 
     @property
     def query(self):

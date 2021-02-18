@@ -5,7 +5,8 @@ from typing import Dict, Set
 
 from .utils.validation import validate_response
 
-class BaseExtractor():
+
+class BaseExtractor:
     """
     Base Extractor for Github's Graphql data
     """
@@ -19,7 +20,7 @@ class BaseExtractor():
         graphql_session,
         tcp,
         parent_extractors: Set,
-        run_timestamp: int
+        run_timestamp: int,
     ):
         # query variables are essential for extractor, it contains information
         # about query variables and state of cursor
@@ -38,36 +39,34 @@ class BaseExtractor():
         self.parent_extractors.add(type(self))
         self.nested_extractors -= parent_extractors
 
-        self.run_timestamp=run_timestamp
-
+        self.run_timestamp = run_timestamp
 
     def extract_data(self):
         has_next_page = True
         while has_next_page:
             formated_query = self.query.format(**self.query_variables)
-            resp = self.graphql_session.post(json={'query': formated_query})
+            resp = self.graphql_session.post(json={"query": formated_query})
             validate_response(resp)
             json_response = resp.json()
 
             self.save_data(json_response)
 
-            nested_query_variables = self.prepare_nested_query_variables(
-                json_response)
+            nested_query_variables = self.prepare_nested_query_variables(json_response)
 
             page_info = self.get_page_info(json_response)
 
-
             for nested_extractor in self.nested_extractors:
                 with concurrent.futures.ThreadPoolExecutor(
-                        max_workers=self.nested_extractor_threads) as executor:
-                    executor.map(self.extract_nested, nested_query_variables,
-                                 repeat(nested_extractor))
+                    max_workers=self.nested_extractor_threads
+                ) as executor:
+                    executor.map(
+                        self.extract_nested,
+                        nested_query_variables,
+                        repeat(nested_extractor),
+                    )
 
-
-            self.update_query_variables(
-                cursor=f'"{page_info["endCursor"]}"'
-            )
-            has_next_page = page_info['hasNextPage']
+            self.update_query_variables(cursor=f'"{page_info["endCursor"]}"')
+            has_next_page = page_info["hasNextPage"]
 
     def update_query_variables(self, **kwargs):
         """
@@ -85,7 +84,7 @@ class BaseExtractor():
             INSERT INTO github.{self.target_table} (raw_data, run_timestamp) 
             VALUES (%s, %s)
             """,
-            (json.dumps(data), self.run_timestamp)
+            (json.dumps(data), self.run_timestamp),
         )
 
         self.tcp.putconn(conn)
@@ -99,7 +98,7 @@ class BaseExtractor():
             self.graphql_session,
             self.tcp,
             self.parent_extractors,
-            self.run_timestamp
+            self.run_timestamp,
         )
         _extractor.extract_data()
 
@@ -127,4 +126,3 @@ class BaseExtractor():
     @property
     def target_table(self):
         raise NotImplementedError
-
